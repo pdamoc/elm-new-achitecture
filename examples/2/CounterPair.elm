@@ -59,11 +59,11 @@ type alias Config msg =
 counterPair : Config msg -> Model -> Html msg
 counterPair cfg model =
     let
-        onUpdate tagger =
-            (tagger >> ((flip update) model) >> cfg.onUpdate)
+        adapter =
+            ((flip update) model) >> cfg.onUpdate
     in
         div []
-            [ counter { onUpdate = onUpdate Top } model.topCounter
-            , counter { onUpdate = onUpdate Bottom } model.bottomCounter
-            , button [ onClick ((update Reset model) |> cfg.onUpdate) ] [ text "RESET" ]
+            [ counter { onUpdate = adapter << Top } model.topCounter
+            , counter { onUpdate = adapter << Bottom } model.bottomCounter
+            , button [ onClick (adapter Reset) ] [ text "RESET" ]
             ]
