@@ -76,22 +76,22 @@ type alias Config msg =
 counterList : Config msg -> Model -> Html msg
 counterList cfg model =
     let
-        onUpdate =
+        adapter =
             ((flip update) model) >> cfg.onUpdate
 
         counters =
-            List.map (viewCounter onUpdate) model.counters
+            List.map (viewCounter adapter) model.counters
 
         insert =
-            button [ onClick ((update Insert model) |> cfg.onUpdate) ] [ text "Add" ]
+            button [ onClick (adapter Insert) ] [ text "Add" ]
     in
         div [] (insert :: counters)
 
 
 viewCounter : (Msg -> msg) -> ( ID, Counter.Model ) -> Html msg
-viewCounter updater ( id, model ) =
+viewCounter adapter ( id, model ) =
     counterWithRemove
-        { onUpdate = updater << (Modify id)
-        , onRemove = updater (Remove id)
+        { onUpdate = adapter << (Modify id)
+        , onRemove = adapter (Remove id)
         }
         model
