@@ -1,12 +1,12 @@
 module CounterPair exposing (..)
 
-import Counter
+import Counter exposing (counter)
 import Html exposing (..)
-import Html.App
 import Html.Events exposing (..)
 
 
 -- MODEL
+
 
 type alias Model =
     { topCounter : Counter.Model
@@ -21,36 +21,49 @@ init top bottom =
     }
 
 
+
 -- UPDATE
+
 
 type Msg
     = Reset
-    | Top Counter.Msg
-    | Bottom Counter.Msg
+    | Top Counter.Model
+    | Bottom Counter.Model
 
 
 update : Msg -> Model -> Model
 update msg model =
-  case msg of
-    Reset -> init 0 0
+    case msg of
+        Reset ->
+            init 0 0
 
-    Top act ->
-      { model |
-          topCounter = Counter.update act model.topCounter
-      }
+        Top mdl ->
+            { model
+                | topCounter = mdl
+            }
 
-    Bottom act ->
-      { model |
-          bottomCounter = Counter.update act model.bottomCounter
-      }
+        Bottom mdl ->
+            { model
+                | bottomCounter = mdl
+            }
+
 
 
 -- VIEW
 
-view : Model -> Html Msg
-view model =
-  div []
-    [ Html.App.map Top <| Counter.view model.topCounter
-    , Html.App.map Bottom <| Counter.view model.bottomCounter
-    , button [ onClick Reset ] [ text "RESET" ]
-    ]
+
+type alias Config msg =
+    { onUpdate : Model -> msg }
+
+
+counterPair : Config msg -> Model -> Html msg
+counterPair cfg model =
+    let
+        onUpdate tagger =
+            (tagger >> ((flip update) model) >> cfg.onUpdate)
+    in
+        div []
+            [ counter { onUpdate = onUpdate Top } model.topCounter
+            , counter { onUpdate = onUpdate Bottom } model.bottomCounter
+            , button [ onClick ((update Reset model) |> cfg.onUpdate) ] [ text "RESET" ]
+            ]
