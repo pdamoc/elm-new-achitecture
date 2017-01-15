@@ -48,12 +48,16 @@ type alias Config msg =
 
 counterWithRemove : Config msg -> Model -> Html msg
 counterWithRemove cfg model =
-    div []
-        [ button [ onClick ((update Decrement model) |> cfg.onUpdate) ] [ text "-" ]
-        , div [ countStyle ] [ text (toString model) ]
-        , button [ onClick ((update Increment model) |> cfg.onUpdate) ] [ text "+" ]
-        , button [ onClick cfg.onRemove ] [ text "x" ]
-        ]
+    let
+        adapter =
+            ((flip update) model) >> cfg.onUpdate
+    in
+        div []
+            [ button [ onClick (adapter Decrement) ] [ text "-" ]
+            , div [ countStyle ] [ text (toString model) ]
+            , button [ onClick (adapter Increment) ] [ text "+" ]
+            , button [ onClick cfg.onRemove ] [ text "x" ]
+            ]
 
 
 countStyle : Attribute msg

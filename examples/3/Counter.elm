@@ -46,11 +46,15 @@ type alias Config msg =
 
 counter : Config msg -> Model -> Html msg
 counter cfg model =
-    div []
-        [ button [ onClick ((update Decrement model) |> cfg.onUpdate) ] [ text "-" ]
-        , div [ countStyle ] [ text (toString model) ]
-        , button [ onClick ((update Increment model) |> cfg.onUpdate) ] [ text "+" ]
-        ]
+    let
+        adapter =
+            ((flip update) model) >> cfg.onUpdate
+    in
+        div []
+            [ button [ onClick (adapter Decrement) ] [ text "-" ]
+            , div [ countStyle ] [ text (toString model) ]
+            , button [ onClick (adapter Increment) ] [ text "+" ]
+            ]
 
 
 countStyle : Attribute msg
