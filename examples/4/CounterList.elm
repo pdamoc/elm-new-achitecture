@@ -1,19 +1,21 @@
 module CounterList exposing (..)
 
-import Counter
+import Counter exposing (counterWithRemove)
 import Html exposing (..)
 import Html.Events exposing (..)
-import Html.App
 
 
 -- MODEL
+
 
 type alias Model =
     { counters : List ( ID, Counter.Model )
     , nextID : ID
     }
 
-type alias ID = Int
+
+type alias ID =
+    Int
 
 
 init : Model
@@ -23,45 +25,73 @@ init =
     }
 
 
+
 -- UPDATE
+
 
 type Msg
     = Insert
-    | Modify ID Counter.Msg
+    | Remove ID
+    | Modify ID Counter.Model
 
 
 update : Msg -> Model -> Model
 update msg model =
-  case msg of
-    Insert ->
-      { model |
-          counters = ( model.nextID, Counter.init 0 ) :: model.counters,
-          nextID = model.nextID + 1
-      }
+    case msg of
+        Insert ->
+            let
+                newCounter =
+                    ( model.nextID, Counter.init 0 )
 
-    Modify id counterMsg ->
-      let 
-        updateCounter (counterID, counterModel) =
-          case (counterID == id, Counter.update counterMsg counterModel) of
-            (False, _) -> 
-              Just (counterID, counterModel) -- not the current counter
-            (True, (newCounterModel, Just Counter.Remove)) -> 
-              Nothing -- current counter +  Remove; should no longer be in the list
-            (True, (newCounterModel, _)) -> 
-              Just (counterID, newCounterModel) -- current counter; other actions
-      in
-        { model | counters = List.filterMap updateCounter model.counters }
+                newCounters =
+                    model.counters ++ [ newCounter ]
+            in
+                { model
+                    | counters = newCounters
+                    , nextID = model.nextID + 1
+                }
+
+        Remove id ->
+            { model | counters = List.filter (\( cid, c ) -> cid /= id) model.counters }
+
+        Modify id newCounterModel ->
+            let
+                updateCounter ( counterID, counterModel ) =
+                    if counterID == id then
+                        ( counterID, newCounterModel )
+                    else
+                        ( counterID, counterModel )
+            in
+                { model | counters = List.map updateCounter model.counters }
+
 
 
 -- VIEW
 
-view : Model -> Html Msg
-view model =
-  let insert = button [ onClick Insert ] [ text "Add" ]
-  in
-      div [] (insert :: List.map viewCounter model.counters)
+
+type alias Config msg =
+    { onUpdate : Model -> msg }
 
 
-viewCounter : (ID, Counter.Model) -> Html Msg
-viewCounter (id, model) =
-  Html.App.map (Modify id) (Counter.viewWithRemoveButton model)
+counterList : Config msg -> Model -> Html msg
+counterList cfg model =
+    let
+        onUpdate =
+            ((flip update) model) >> cfg.onUpdate
+
+        counters =
+            List.map (viewCounter onUpdate) model.counters
+
+        insert =
+            button [ onClick ((update Insert model) |> cfg.onUpdate) ] [ text "Add" ]
+    in
+        div [] (insert :: counters)
+
+
+viewCounter : (Msg -> msg) -> ( ID, Counter.Model ) -> Html msg
+viewCounter updater ( id, model ) =
+    counterWithRemove
+        { onUpdate = updater << (Modify id)
+        , onRemove = updater (Remove id)
+        }
+        model
